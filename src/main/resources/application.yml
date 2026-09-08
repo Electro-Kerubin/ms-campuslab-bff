@@ -1,0 +1,29 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: ms-campuslab-bff
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # App Registration "CampusLab" en Azure AD (ver context/CONTEXT.md, seccion 4)
+          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:common}/v2.0
+
+# Configuracion propia de validacion de JWT (org.campuslab.bff.security.JwtProperties)
+campuslab:
+  security:
+    jwt:
+      # Audience(s) esperados en el token (claim "aud"). Debe coincidir con el
+      # audience configurado en el JWT Authorizer del API Gateway.
+      audiences:
+        - api://${API_CLIENT_ID:campuslab-bff}
+      # Claim del access token donde Azure AD expone los App Roles asignados
+      # al usuario (Admin, Tecnico, Estudiante, Auditor).
+      roles-claim: roles
+
+logging:
+  level:
+    org.campuslab.bff: INFO
+    org.springframework.security: INFO
