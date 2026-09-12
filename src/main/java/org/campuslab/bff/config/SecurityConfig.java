@@ -1,5 +1,6 @@
 package org.campuslab.bff.config;
 
+import org.campuslab.bff.security.Role;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -63,16 +64,16 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
                 // Rutas ADMIN
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/**").hasRole(Role.ADMIN.name())
 
                 // Rutas TECNICO
-                .requestMatchers("/api/tecnico/**").hasAnyRole("TECNICO", "ADMIN")
+                .requestMatchers("/api/tecnico/**").hasAnyRole(Role.TECNICO.name(), Role.ADMIN.name())
 
                 // Rutas ESTUDIANTE
-                .requestMatchers("/api/estudiante/**").hasAnyRole("ESTUDIANTE", "ADMIN")
+                .requestMatchers("/api/estudiante/**").hasAnyRole(Role.ESTUDIANTE.name(), Role.ADMIN.name())
 
                 // Rutas AUDITOR
-                .requestMatchers("/api/auditor/**").hasAnyRole("AUDITOR", "ADMIN")
+                .requestMatchers("/api/auditor/**").hasAnyRole(Role.AUDITOR.name(), Role.ADMIN.name())
 
                 // Todo lo demás requiere autenticación
                 .anyRequest().authenticated()
