@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * Azure AD (por defecto "roles") a authorities de Spring Security con el
  * prefijo "ROLE_" (ej: "ADMIN" -> "ROLE_ADMIN").
  *
- * Ver {@link Roles} para los valores de rol esperados.
+ * Ver {@link Role} para los valores de rol esperados (ADMIN, TECNICO, ESTUDIANTE, AUDITOR).
  */
 @Component
 public class AzureAdJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
