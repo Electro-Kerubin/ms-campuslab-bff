@@ -1,13 +1,22 @@
+<<<<<<< Updated upstream
 server:
   port: ${SERVER_PORT:8080}
 
 spring:
   application:
     name: ms-campuslab-bff
+=======
+spring:
+  application:
+    name: ms-campuslab-bff
+
+  # OAuth2 Resource Server Configuration
+>>>>>>> Stashed changes
   security:
     oauth2:
       resourceserver:
         jwt:
+<<<<<<< Updated upstream
           # App Registration "CampusLab" en Azure AD (ver context/CONTEXT.md, seccion 4)
           issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:common}/v2.0
 
@@ -27,3 +36,51 @@ logging:
   level:
     org.campuslab.bff: INFO
     org.springframework.security: INFO
+=======
+          # URL del servidor JWT (JWKS)
+          # Cambiar según tu proveedor de autenticación
+          # Ejemplos:
+          # - Keycloak: http://keycloak:8080/auth/realms/campuslab/protocol/openid-connect/certs
+          # - Auth0: https://tu-dominio.auth0.com/.well-known/jwks.json
+          # - Google: https://www.googleapis.com/oauth2/v3/certs
+          jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8090/auth/realms/campuslab/protocol/openid-connect/certs}
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8090/auth/realms/campuslab}
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# Logging
+logging:
+  level:
+    root: INFO
+    org.campuslab: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+
+# Actuator para monitoreo
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Información de la aplicación
+info:
+  app:
+    name: CampusLab BFF
+    description: Backend For Frontend - Puerta de enlace para microservicios
+    version: 1.0.0
+    encoding: UTF-8
+    java:
+      version: 21
+>>>>>>> Stashed changes
