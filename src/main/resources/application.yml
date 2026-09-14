@@ -1,53 +1,26 @@
-<<<<<<< Updated upstream
-server:
-  port: ${SERVER_PORT:8080}
-
-spring:
-  application:
-    name: ms-campuslab-bff
-=======
 spring:
   application:
     name: ms-campuslab-bff
 
-  # OAuth2 Resource Server Configuration
->>>>>>> Stashed changes
+  # OAuth2 Resource Server Configuration - Azure EntraID
   security:
     oauth2:
       resourceserver:
         jwt:
-<<<<<<< Updated upstream
-          # App Registration "CampusLab" en Azure AD (ver context/CONTEXT.md, seccion 4)
-          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:common}/v2.0
+          # Azure EntraID URLs
+          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:7da49cdc-96c1-4342-bf8b-54142c0c27d8}/v2.0
+          jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:7da49cdc-96c1-4342-bf8b-54142c0c27d8}/discovery/v2.0/keys
 
-# Configuracion propia de validacion de JWT (org.campuslab.bff.security.JwtProperties)
+# Configuracion propia de validacion de JWT - Azure EntraID
 campuslab:
   security:
     jwt:
-      # Audience(s) esperados en el token (claim "aud"). Debe coincidir con el
-      # audience configurado en el JWT Authorizer del API Gateway.
       audiences:
         - api://${API_CLIENT_ID:campuslab-bff}
-      # Claim del access token donde Azure AD expone los App Roles asignados
-      # al usuario (Admin, Tecnico, Estudiante, Auditor).
       roles-claim: roles
 
-logging:
-  level:
-    org.campuslab.bff: INFO
-    org.springframework.security: INFO
-=======
-          # URL del servidor JWT (JWKS)
-          # Cambiar según tu proveedor de autenticación
-          # Ejemplos:
-          # - Keycloak: http://keycloak:8080/auth/realms/campuslab/protocol/openid-connect/certs
-          # - Auth0: https://tu-dominio.auth0.com/.well-known/jwks.json
-          # - Google: https://www.googleapis.com/oauth2/v3/certs
-          jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8090/auth/realms/campuslab/protocol/openid-connect/certs}
-          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8090/auth/realms/campuslab}
-
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: /
   error:
@@ -83,4 +56,3 @@ info:
     encoding: UTF-8
     java:
       version: 21
->>>>>>> Stashed changes

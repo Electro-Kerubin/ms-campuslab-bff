@@ -92,15 +92,23 @@ public class SecurityConfig {
     /**
      * Convierte los claims del JWT en autoridades (roles) de Spring Security.
      *
-     * Espera que el JWT contenga un claim "roles" o "authorities"
-     * con los roles del usuario.
+     * Para Azure EntraID:
+     * - Espera el claim "roles" con los roles del usuario
+     * - Si no existe, intenta con "appRoles"
+     * - Convierte los roles a autoridades de Spring Security con prefijo "ROLE_"
+     *
+     * Ejemplo de claim en Azure:
+     * {
+     *   "roles": ["ADMIN", "ESTUDIANTE"],
+     *   "oid": "12345...",
+     *   "preferred_username": "user@example.com"
+     * }
      */
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
 
-        // Configura el nombre del claim que contiene los roles
-        // Puedes cambiar esto según tu proveedor de JWT (Keycloak, Auth0, etc.)
+        // Azure EntraID usa el claim "roles" para los roles de aplicación
         authoritiesConverter.setAuthoritiesClaimName("roles");
         authoritiesConverter.setAuthorityPrefix("ROLE_");
 
