@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: ms-campuslab-bff
+
+  # OAuth2 Resource Server Configuration - Azure EntraID
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Azure EntraID URLs
+          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:7da49cdc-96c1-4342-bf8b-54142c0c27d8}/v2.0
+          jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:7da49cdc-96c1-4342-bf8b-54142c0c27d8}/discovery/v2.0/keys
+
+# Configuracion propia de validacion de JWT - Azure EntraID
+campuslab:
+  security:
+    jwt:
+      audiences:
+        - api://${API_CLIENT_ID:campuslab-bff}
+      roles-claim: roles
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# Logging
+logging:
+  level:
+    root: INFO
+    org.campuslab: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+
+# Actuator para monitoreo
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Información de la aplicación
+info:
+  app:
+    name: CampusLab BFF
+    description: Backend For Frontend - Puerta de enlace para microservicios
+    version: 1.0.0
+    encoding: UTF-8
+    java:
+      version: 21

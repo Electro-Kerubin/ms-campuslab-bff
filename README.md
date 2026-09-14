@@ -242,5 +242,87 @@ src/
 
 ---
 
+---
+
+## 🔐 Autorización por Roles (RBAC)
+
+Este BFF implementa autorización basada en roles (Role-Based Access Control) usando **Spring Security** con **OAuth2 Resource Server** y **JWT**.
+
+### Roles Soportados
+
+- **ADMIN**: Acceso completo, administración del sistema
+- **TECNICO**: Acceso técnico, configuración y logs
+- **ESTUDIANTE**: Acceso a cursos, calificaciones y materiales
+- **AUDITOR**: Acceso de lectura a registros de auditoría
+
+### Características
+
+✅ Validación de JWT desde servidor JWKS (Keycloak, Auth0, etc.)  
+✅ Autorización granular por endpoint con `@PreAuthorize`  
+✅ Manejo centralizado de excepciones de seguridad  
+✅ CORS habilitado para peticiones desde frontend  
+✅ Sin estado (Stateless) - ideal para microservicios  
+✅ Soporte para múltiples proveedores de autenticación  
+
+### Configuración Rápida
+
+```yaml
+# application.yml
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://keycloak:8080/auth/realms/campuslab/protocol/openid-connect/certs
+          issuer-uri: http://keycloak:8080/auth/realms/campuslab
+```
+
+### Ejemplos de Protección
+
+```java
+// Solo para ADMIN
+@GetMapping("/admin/estadisticas")
+@PreAuthorize("hasRole('ADMIN')")
+public ResponseEntity<Map> getStats() { ... }
+
+// Para TECNICO o ADMIN
+@GetMapping("/tecnico/configuracion")
+@PreAuthorize("hasAnyRole('TECNICO', 'ADMIN')")
+public ResponseEntity<Map> getConfig() { ... }
+
+// Público (sin autenticación)
+@GetMapping("/public/informacion")
+public ResponseEntity<Map> getInfo() { ... }
+```
+
+### Documentación Completa
+
+Consulta los siguientes archivos para más información:
+
+- 📖 **[AUTHORIZATION_GUIDE.md](./AUTHORIZATION_GUIDE.md)** - Guía completa de autorización
+- 🔑 **[KEYCLOAK_INTEGRATION.md](./KEYCLOAK_INTEGRATION.md)** - Integración con Keycloak
+- 🧪 **[test-roles.sh](./test-roles.sh)** - Script para probar endpoints
+
+### Testing
+
+```bash
+# Obtener token de Keycloak
+TOKEN=$(curl -X POST http://localhost:8090/auth/realms/campuslab/protocol/openid-connect/token \
+  -d "client_id=campuslab-client" \
+  -d "client_secret=<SECRET>" \
+  -d "username=admin@campus.lab" \
+  -d "password=admin123" \
+  -d "grant_type=password" | jq -r '.access_token')
+
+# Probar endpoint protegido
+curl -X GET http://localhost:8080/api/admin/estadisticas \
+  -H "Authorization: Bearer $TOKEN"
+
+# Probar endpoint público
+curl -X GET http://localhost:8080/api/public/informacion
+```
+
+---
+
 **Última actualización:** *(actualizar en cada cambio relevante)*
 # ms-campuslab-bff
