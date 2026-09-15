@@ -1,10 +1,15 @@
 package org.campuslab.bff.config;
 
 import feign.Logger;
+import feign.RequestInterceptor;
 import feign.codec.ErrorDecoder;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Configuración centralizada de Feign para comunicación con microservicios.
@@ -68,5 +73,30 @@ public class FeignConfig {
     @Bean
     public ErrorDecoder errorDecoder() {
         return new FeignErrorDecoder();
+    }
+
+    /**
+     * Propaga el header Authorization (Bearer JWT) de la solicitud entrante
+     * del frontend hacia las llamadas salientes a los microservicios de
+     * dominio (ms-bookings, ms-catalog, etc.), que también validan JWT.
+     *
+     * Sin esto, Feign no reenvía ningún header por defecto y los
+     * microservicios responden 401/403 aunque el BFF sí esté autenticado.
+     */
+    @Bean
+    public RequestInterceptor authorizationForwardingInterceptor() {
+        return requestTemplate -> {
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes == null) {
+                return;
+            }
+
+            HttpServletRequest request = attributes.getRequest();
+            String authorizationHeader = request.getHeader("Authorization");
+            if (authorizationHeader != null) {
+                requestTemplate.header("Authorization", authorizationHeader);
+            }
+        };
     }
 }

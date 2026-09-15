@@ -1,7 +1,12 @@
 package org.campuslab.bff.client;
 
-import org.campuslab.bff.dto.EquipmentDTO;
+import org.campuslab.bff.dto.CategoryDTO;
 import org.campuslab.bff.dto.LabDTO;
+import org.campuslab.bff.dto.LabRequestDTO;
+import org.campuslab.bff.dto.ResourceDTO;
+import org.campuslab.bff.dto.ResourceRequestDTO;
+import org.campuslab.bff.dto.ResourceUpdateDTO;
+import org.campuslab.bff.dto.StockUpdateDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +16,8 @@ import java.util.List;
 /**
  * Cliente Feign para comunicación con ms-catalog.
  *
- * Maneja todas las operaciones relacionadas con catálogo de laboratorios y equipos.
+ * Los endpoints reflejan exactamente los controllers reales de
+ * ms-campuslab-catalog (LabController, ResourceController, CategoryController).
  */
 @FeignClient(
         name = "ms-catalog",
@@ -20,87 +26,42 @@ import java.util.List;
 )
 public interface CatalogClient {
 
-    /**
-     * Obtener todos los laboratorios.
-     */
-    @GetMapping("/api/labs")
+    // ─── Labs ───────────────────────────────────────────────────────────
+    @GetMapping("/api/catalog/labs")
     ResponseEntity<List<LabDTO>> getAllLabs();
 
-    /**
-     * Obtener un laboratorio específico por ID.
-     */
-    @GetMapping("/api/labs/{id}")
-    ResponseEntity<LabDTO> getLabById(@PathVariable String id);
+    @GetMapping("/api/catalog/labs/{id}")
+    ResponseEntity<LabDTO> getLabById(@PathVariable Long id);
 
-    /**
-     * Obtener laboratorios por ubicación.
-     */
-    @GetMapping("/api/labs/ubicacion/{ubicacion}")
-    ResponseEntity<List<LabDTO>> getLabsByUbicacion(@PathVariable String ubicacion);
+    @PostMapping("/api/catalog/labs")
+    ResponseEntity<LabDTO> createLab(@RequestBody LabRequestDTO lab);
 
-    /**
-     * Obtener laboratorios con disponibilidad.
-     */
-    @GetMapping("/api/labs/disponibles")
-    ResponseEntity<List<LabDTO>> getAvailableLabs();
+    @PutMapping("/api/catalog/labs/{id}")
+    ResponseEntity<LabDTO> updateLab(@PathVariable Long id, @RequestBody LabRequestDTO lab);
 
-    /**
-     * Crear un nuevo laboratorio (solo ADMIN).
-     */
-    @PostMapping("/api/labs")
-    ResponseEntity<LabDTO> createLab(@RequestBody LabDTO labDTO);
+    @DeleteMapping("/api/catalog/labs/{id}")
+    ResponseEntity<Void> deleteLab(@PathVariable Long id);
 
-    /**
-     * Actualizar un laboratorio (solo ADMIN).
-     */
-    @PutMapping("/api/labs/{id}")
-    ResponseEntity<LabDTO> updateLab(
-            @PathVariable String id,
-            @RequestBody LabDTO labDTO
-    );
+    // ─── Resources (SALA / EQUIPO / INSUMO) ────────────────────────────
+    @GetMapping("/api/catalog/resources")
+    ResponseEntity<List<ResourceDTO>> getAllResources(@RequestParam(required = false) Long labId);
 
-    /**
-     * Eliminar un laboratorio (solo ADMIN).
-     */
-    @DeleteMapping("/api/labs/{id}")
-    ResponseEntity<Void> deleteLab(@PathVariable String id);
+    @GetMapping("/api/catalog/resources/{id}")
+    ResponseEntity<ResourceDTO> getResourceById(@PathVariable Long id);
 
-    /**
-     * Obtener todos los equipos.
-     */
-    @GetMapping("/api/equipment")
-    ResponseEntity<List<EquipmentDTO>> getAllEquipment();
+    @PostMapping("/api/catalog/resources")
+    ResponseEntity<ResourceDTO> createResource(@RequestBody ResourceRequestDTO resource);
 
-    /**
-     * Obtener equipos por laboratorio.
-     */
-    @GetMapping("/api/equipment/lab/{labId}")
-    ResponseEntity<List<EquipmentDTO>> getEquipmentByLab(@PathVariable String labId);
+    @PutMapping("/api/catalog/resources/{id}")
+    ResponseEntity<ResourceDTO> updateResource(@PathVariable Long id, @RequestBody ResourceUpdateDTO resource);
 
-    /**
-     * Obtener un equipo específico por ID.
-     */
-    @GetMapping("/api/equipment/{id}")
-    ResponseEntity<EquipmentDTO> getEquipmentById(@PathVariable String id);
+    @PutMapping("/api/catalog/resources/{id}/stock")
+    ResponseEntity<ResourceDTO> adjustStock(@PathVariable Long id, @RequestBody StockUpdateDTO stock);
 
-    /**
-     * Crear un nuevo equipo (solo ADMIN).
-     */
-    @PostMapping("/api/equipment")
-    ResponseEntity<EquipmentDTO> createEquipment(@RequestBody EquipmentDTO equipmentDTO);
+    @DeleteMapping("/api/catalog/resources/{id}")
+    ResponseEntity<Void> deleteResource(@PathVariable Long id);
 
-    /**
-     * Actualizar un equipo (solo ADMIN).
-     */
-    @PutMapping("/api/equipment/{id}")
-    ResponseEntity<EquipmentDTO> updateEquipment(
-            @PathVariable String id,
-            @RequestBody EquipmentDTO equipmentDTO
-    );
-
-    /**
-     * Eliminar un equipo (solo ADMIN).
-     */
-    @DeleteMapping("/api/equipment/{id}")
-    ResponseEntity<Void> deleteEquipment(@PathVariable String id);
+    // ─── Categories ─────────────────────────────────────────────────────
+    @GetMapping("/api/catalog/categories")
+    ResponseEntity<List<CategoryDTO>> getAllCategories();
 }

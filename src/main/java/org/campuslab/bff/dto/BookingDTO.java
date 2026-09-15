@@ -3,150 +3,114 @@ package org.campuslab.bff.dto;
 /**
  * DTO para representar una Reserva de Laboratorio.
  *
- * Datos agregados desde ms-bookings.
+ * Refleja exactamente el {@code BookingResponse} que expone
+ * ms-campuslab-bookings (ver su record BookingResponse), más un campo
+ * opcional {@code resourceNombre} agregado desde ms-catalog cuando está
+ * disponible.
  */
 public class BookingDTO {
 
-    private String id;
-    private String labId;
-    private String labNombre;
-    private String estudianteId;
-    private String estudianteNombre;
-    private String fechaInicio;
-    private String fechaFin;
-    private String proposito;
-    private String estado;
-    private int capacidadEsperada;
-    private String fechaCreacion;
-    private String tecnicoAprobador;
-    private String observaciones;
+    private Long id;
+    private Long resourceId;
+    private String resourceNombre;
+    private String studentEmail;
+    private String purpose;
+    private String startTime;
+    private String endTime;
+    private String status;
+    private String createdAt;
+    private String updatedAt;
 
-    // Constructores
     public BookingDTO() {
     }
 
-    public BookingDTO(String id, String labId, String estudianteId,
-                     String fechaInicio, String fechaFin, String estado) {
-        this.id = id;
-        this.labId = labId;
-        this.estudianteId = estudianteId;
-        this.fechaInicio = fechaInicio;
-        this.fechaFin = fechaFin;
-        this.estado = estado;
-    }
-
-    // Getters y Setters
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public String getLabId() {
-        return labId;
+    public Long getResourceId() {
+        return resourceId;
     }
 
-    public void setLabId(String labId) {
-        this.labId = labId;
+    public void setResourceId(Long resourceId) {
+        this.resourceId = resourceId;
     }
 
-    public String getLabNombre() {
-        return labNombre;
+    public String getResourceNombre() {
+        return resourceNombre;
     }
 
-    public void setLabNombre(String labNombre) {
-        this.labNombre = labNombre;
+    public void setResourceNombre(String resourceNombre) {
+        this.resourceNombre = resourceNombre;
     }
 
-    public String getEstudianteId() {
-        return estudianteId;
+    public String getStudentEmail() {
+        return studentEmail;
     }
 
-    public void setEstudianteId(String estudianteId) {
-        this.estudianteId = estudianteId;
+    public void setStudentEmail(String studentEmail) {
+        this.studentEmail = studentEmail;
     }
 
-    public String getEstudianteNombre() {
-        return estudianteNombre;
+    public String getPurpose() {
+        return purpose;
     }
 
-    public void setEstudianteNombre(String estudianteNombre) {
-        this.estudianteNombre = estudianteNombre;
+    public void setPurpose(String purpose) {
+        this.purpose = purpose;
     }
 
-    public String getFechaInicio() {
-        return fechaInicio;
+    public String getStartTime() {
+        return startTime;
     }
 
-    public void setFechaInicio(String fechaInicio) {
-        this.fechaInicio = fechaInicio;
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
     }
 
-    public String getFechaFin() {
-        return fechaFin;
+    public String getEndTime() {
+        return endTime;
     }
 
-    public void setFechaFin(String fechaFin) {
-        this.fechaFin = fechaFin;
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
     }
 
-    public String getProposito() {
-        return proposito;
+    public String getStatus() {
+        return status;
     }
 
-    public void setProposito(String proposito) {
-        this.proposito = proposito;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
-    public String getEstado() {
-        return estado;
+    public String getCreatedAt() {
+        return createdAt;
     }
 
-    public void setEstado(String estado) {
-        this.estado = estado;
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public int getCapacidadEsperada() {
-        return capacidadEsperada;
+    public String getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setCapacidadEsperada(int capacidadEsperada) {
-        this.capacidadEsperada = capacidadEsperada;
-    }
-
-    public String getFechaCreacion() {
-        return fechaCreacion;
-    }
-
-    public void setFechaCreacion(String fechaCreacion) {
-        this.fechaCreacion = fechaCreacion;
-    }
-
-    public String getTecnicoAprobador() {
-        return tecnicoAprobador;
-    }
-
-    public void setTecnicoAprobador(String tecnicoAprobador) {
-        this.tecnicoAprobador = tecnicoAprobador;
-    }
-
-    public String getObservaciones() {
-        return observaciones;
-    }
-
-    public void setObservaciones(String observaciones) {
-        this.observaciones = observaciones;
+    public void setUpdatedAt(String updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     @Override
     public String toString() {
         return "BookingDTO{" +
-                "id='" + id + '\'' +
-                ", labNombre='" + labNombre + '\'' +
-                ", estudianteNombre='" + estudianteNombre + '\'' +
-                ", estado='" + estado + '\'' +
+                "id=" + id +
+                ", resourceId=" + resourceId +
+                ", studentEmail='" + studentEmail + '\'' +
+                ", status='" + status + '\'' +
                 '}';
     }
 }

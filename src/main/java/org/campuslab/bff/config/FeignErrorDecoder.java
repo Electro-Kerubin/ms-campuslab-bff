@@ -45,6 +45,15 @@ public class FeignErrorDecoder implements ErrorDecoder {
                     response.status(),
                     body
             );
+            // 400/409/422: errores de validación de negocio del microservicio
+            // (ej: "Los EQUIPOS requieren 'equipment' con número de serie").
+            // Hay que preservar el status Y el body para que el usuario vea
+            // el motivo real en vez de un 500 genérico.
+            case 400, 409, 422 -> new MicroserviceException(
+                    "Solicitud inválida en microservicio: " + methodKey,
+                    response.status(),
+                    body
+            );
             case 500, 502, 503 -> new MicroserviceException(
                     "Error en microservicio: " + methodKey,
                     response.status(),

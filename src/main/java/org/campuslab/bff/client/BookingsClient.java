@@ -1,17 +1,23 @@
 package org.campuslab.bff.client;
 
 import org.campuslab.bff.dto.BookingDTO;
+import org.campuslab.bff.dto.CreateBookingDTO;
+import org.campuslab.bff.dto.StatusUpdateDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Cliente Feign para comunicación con ms-bookings.
  *
- * Maneja todas las operaciones relacionadas con reservas de laboratorios.
+ * Los endpoints reflejan exactamente el BookingController real de
+ * ms-campuslab-bookings:
+ *   POST /api/bookings
+ *   GET  /api/bookings/{id}
+ *   GET  /api/bookings?status=&from=&to=
+ *   PUT  /api/bookings/{id}/status
  */
 @FeignClient(
         name = "ms-bookings",
@@ -20,65 +26,28 @@ import java.util.Map;
 )
 public interface BookingsClient {
 
+    @PostMapping("/api/bookings")
+    ResponseEntity<BookingDTO> createBooking(@RequestBody CreateBookingDTO booking);
+
+    @GetMapping("/api/bookings/{id}")
+    ResponseEntity<BookingDTO> getBookingById(@PathVariable Long id);
+
     /**
-     * Obtener todas las reservas con filtros opcionales.
+     * Lista con filtros opcionales. from/to en formato ISO-8601 LocalDateTime
+     * (ej: 2026-09-15T00:00:00), igual que espera ms-campuslab-bookings.
      */
     @GetMapping("/api/bookings")
     ResponseEntity<List<BookingDTO>> getAllBookings(
-            @RequestParam(required = false) String labId,
-            @RequestParam(required = false) String estado,
-            @RequestParam(required = false) String estudianteId
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to
     );
 
     /**
-     * Obtener una reserva específica por ID.
+     * Único mecanismo de transición de estado que ofrece el microservicio
+     * (solo TECNICO/ADMIN). Aprobar, rechazar, cancelar, etc. se resuelven
+     * todos llamando aquí con el estado destino correspondiente.
      */
-    @GetMapping("/api/bookings/{id}")
-    ResponseEntity<BookingDTO> getBookingById(@PathVariable String id);
-
-    /**
-     * Crear una nueva reserva.
-     */
-    @PostMapping("/api/bookings")
-    ResponseEntity<BookingDTO> createBooking(@RequestBody Map<String, Object> bookingData);
-
-    /**
-     * Actualizar una reserva existente.
-     */
-    @PutMapping("/api/bookings/{id}")
-    ResponseEntity<BookingDTO> updateBooking(
-            @PathVariable String id,
-            @RequestBody Map<String, Object> bookingData
-    );
-
-    /**
-     * Cancelar una reserva.
-     */
-    @DeleteMapping("/api/bookings/{id}")
-    ResponseEntity<Void> cancelBooking(@PathVariable String id);
-
-    /**
-     * Obtener disponibilidad de laboratorio en un rango de fechas.
-     */
-    @GetMapping("/api/bookings/availability/{labId}")
-    ResponseEntity<Map<String, Object>> checkAvailability(
-            @PathVariable String labId,
-            @RequestParam String fechaInicio,
-            @RequestParam String fechaFin
-    );
-
-    /**
-     * Aprobar una reserva (solo TECNICO/ADMIN).
-     */
-    @PostMapping("/api/bookings/{id}/approve")
-    ResponseEntity<BookingDTO> approveBooking(@PathVariable String id);
-
-    /**
-     * Rechazar una reserva (solo TECNICO/ADMIN).
-     */
-    @PostMapping("/api/bookings/{id}/reject")
-    ResponseEntity<BookingDTO> rejectBooking(
-            @PathVariable String id,
-            @RequestBody Map<String, String> razonRechazo
-    );
+    @PutMapping("/api/bookings/{id}/status")
+    ResponseEntity<BookingDTO> updateStatus(@PathVariable Long id, @RequestBody StatusUpdateDTO status);
 }

@@ -1,5 +1,7 @@
 package org.campuslab.bff.exception;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -16,10 +18,69 @@ import java.time.LocalDateTime;
  * Maneja:
  * - AccessDeniedException: El usuario no tiene permisos para acceder al recurso
  * - AuthenticationException: El usuario no está autenticado
+ * - MicroserviceException (y subclases): errores propagados desde un
+ *   microservicio de dominio vía Feign (ver FeignErrorDecoder) — sin este
+ *   handler, TODOS caían en el handler genérico de abajo y se devolvían
+ *   como 500 "ERROR_INTERNO" perdiendo el status y el mensaje real
+ *   (ej: un 409 de validación de negocio como "Los EQUIPOS requieren
+ *   'equipment' con número de serie" llegaba al frontend como un 500 opaco).
  * - Excepciones generales
  */
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    /**
+     * Maneja errores propagados desde un microservicio de dominio, preservando
+     * su status HTTP real y extrayendo un mensaje legible del body (los
+     * microservicios de este proyecto devuelven {"error": "..."} o
+     * {"message": "..."}).
+     */
+    @ExceptionHandler(MicroserviceException.class)
+    public ResponseEntity<ErrorResponse> handleMicroserviceException(
+            MicroserviceException ex,
+            WebRequest request) {
+
+        HttpStatus status;
+        try {
+            status = HttpStatus.valueOf(ex.getHttpStatus());
+        } catch (IllegalArgumentException e) {
+            status = HttpStatus.BAD_GATEWAY;
+        }
+
+        String friendlyMessage = extractMessage(ex.getResponseBody());
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                status.value(),
+                "ERROR_MICROSERVICIO",
+                friendlyMessage != null ? friendlyMessage : ex.getMessage(),
+                ex.getResponseBody(),
+                request.getDescription(false).replace("uri=", "")
+        );
+
+        return new ResponseEntity<>(errorResponse, status);
+    }
+
+    /** Intenta sacar "error" o "message" del body JSON devuelto por el microservicio. */
+    private String extractMessage(String body) {
+        if (body == null || body.isBlank()) {
+            return null;
+        }
+        try {
+            JsonNode node = MAPPER.readTree(body);
+            if (node.hasNonNull("error")) {
+                return node.get("error").asText();
+            }
+            if (node.hasNonNull("message")) {
+                return node.get("message").asText();
+            }
+        } catch (Exception ignored) {
+            // El body no era JSON parseable; se usa el mensaje genérico de la excepción.
+        }
+        return null;
+    }
 
     /**
      * Maneja errores de acceso denegado (403 Forbidden).

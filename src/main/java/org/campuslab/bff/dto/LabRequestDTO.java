@@ -1,25 +1,16 @@
 package org.campuslab.bff.dto;
 
 /**
- * Refleja LabResponseDTO de ms-campuslab-catalog.
+ * Cuerpo de POST/PUT /api/catalog/labs, mismo shape que LabRequestDTO de
+ * ms-campuslab-catalog.
  */
-public class LabDTO {
+public class LabRequestDTO {
 
-    private Long id;
     private String name;
     private String location;
     private Integer capacity;
-    private String createdAt;
 
-    public LabDTO() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
+    public LabRequestDTO() {
     }
 
     public String getName() {
@@ -44,13 +35,5 @@ public class LabDTO {
 
     public void setCapacity(Integer capacity) {
         this.capacity = capacity;
-    }
-
-    public String getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(String createdAt) {
-        this.createdAt = createdAt;
     }
 }
