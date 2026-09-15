@@ -5,7 +5,7 @@ import org.campuslab.bff.client.BookingsClient;
 import org.campuslab.bff.client.CatalogClient;
 import org.campuslab.bff.dto.BookingDTO;
 import org.campuslab.bff.dto.CreateBookingDTO;
-import org.campuslab.bff.dto.LabDTO;
+import org.campuslab.bff.dto.ResourceDTO;
 import org.campuslab.bff.dto.StatusUpdateDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,9 +136,9 @@ public class BookingService {
             return;
         }
         try {
-            ResponseEntity<LabDTO> labResponse = catalogClient.getLabById(booking.getResourceId().toString());
-            if (labResponse.getBody() != null) {
-                booking.setResourceNombre(labResponse.getBody().getNombre());
+            ResponseEntity<ResourceDTO> resourceResponse = catalogClient.getResourceById(booking.getResourceId());
+            if (resourceResponse.getBody() != null) {
+                booking.setResourceNombre(resourceResponse.getBody().getName());
             }
         } catch (Exception e) {
             logger.debug("No se pudo obtener información del recurso {}: {}", booking.getResourceId(), e.getMessage());

@@ -1,17 +1,16 @@
 package org.campuslab.bff.dto;
 
 /**
- * Refleja LabResponseDTO de ms-campuslab-catalog.
+ * Refleja CategoryResponseDTO de ms-campuslab-catalog.
  */
-public class LabDTO {
+public class CategoryDTO {
 
     private Long id;
     private String name;
-    private String location;
-    private Integer capacity;
+    private String description;
     private String createdAt;
 
-    public LabDTO() {
+    public CategoryDTO() {
     }
 
     public Long getId() {
@@ -30,20 +29,12 @@ public class LabDTO {
         this.name = name;
     }
 
-    public String getLocation() {
-        return location;
+    public String getDescription() {
+        return description;
     }
 
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public Integer getCapacity() {
-        return capacity;
-    }
-
-    public void setCapacity(Integer capacity) {
-        this.capacity = capacity;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getCreatedAt() {
