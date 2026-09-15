@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: ms-campuslab-bff
+
+  # Para desarrollo: deshabilitamos autenticación JWT
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Configuración deshabilitada para desarrollo
+          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:7da49cdc-96c1-4342-bf8b-54142c0c27d8}/v2.0
+          jwk-set-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:7da49cdc-96c1-4342-bf8b-54142c0c27d8}/discovery/v2.0/keys
+
+campuslab:
+  security:
+    jwt:
+      audiences:
+        - api://${API_CLIENT_ID:campuslab-bff}
+      roles-claim: roles
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+  error:
+    include-message: always
+    include-binding-errors: always
+
+logging:
+  level:
+    root: INFO
+    org.campuslab: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+info:
+  app:
+    name: CampusLab BFF
+    description: Backend For Frontend - Puerta de enlace para microservicios
+    version: 1.0.0
+    encoding: UTF-8
+    java:
+      version: 21
+    environment: development

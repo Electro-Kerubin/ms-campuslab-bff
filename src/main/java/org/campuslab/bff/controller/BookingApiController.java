@@ -1,6 +1,8 @@
 package org.campuslab.bff.controller;
 
 import org.campuslab.bff.dto.BookingDTO;
+import org.campuslab.bff.dto.CreateBookingDTO;
+import org.campuslab.bff.dto.StatusUpdateDTO;
 import org.campuslab.bff.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,16 +17,16 @@ import java.util.Map;
 /**
  * Controlador REST para operaciones de Reservas.
  *
- * Expone API para el frontend Angular, orquestando llamadas a:
- * - ms-bookings: Gestión de reservas
- * - ms-catalog: Información de laboratorios
+ * Expone al frontend Angular el mismo contrato que ofrece
+ * ms-campuslab-bookings (ver su BookingController), agregando el nombre del
+ * recurso desde ms-catalog cuando está disponible.
  *
  * Base Path: /api/bookings
  *
  * Roles disponibles:
  * - ADMIN: Acceso total
- * - TECNICO: Aprobación de reservas
- * - ESTUDIANTE: Crear y gestionar propias reservas
+ * - TECNICO: Aprueba/rechaza/cambia el estado de las reservas
+ * - ESTUDIANTE: Crea y consulta reservas
  * - AUDITOR: Solo lectura
  */
 @RestController
@@ -32,49 +34,38 @@ import java.util.Map;
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class BookingApiController {
 
-    // Constantes de roles para usar en @PreAuthorize
-    private static final String ROLE_ADMIN = "ADMIN";
-    private static final String ROLE_TECNICO = "TECNICO";
-    private static final String ROLE_ESTUDIANTE = "ESTUDIANTE";
-    private static final String ROLE_AUDITOR = "AUDITOR";
-
     @Autowired
     private BookingService bookingService;
 
     /**
      * GET /api/bookings
-     * Obtener todas las reservas con filtros opcionales.
+     * Lista reservas con filtros opcionales (los mismos que soporta
+     * ms-campuslab-bookings).
      *
-     * Parámetros de query:
-     * - labId: Filtrar por ID de laboratorio
-     * - estado: Filtrar por estado (SOLICITADA, APROBADA, RECHAZADA, CANCELADA)
-     * - estudianteId: Filtrar por ID de estudiante
+     * Query params:
+     * - status: SOLICITADA | APROBADA | EN_PREPARACION | EN_USO | DEVUELTA | CANCELADA
+     * - from / to: fecha-hora ISO-8601, ej. 2026-09-15T00:00:00
      *
      * Acceso: TODOS (autenticados)
      */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<BookingDTO>> getAllBookings(
-            @RequestParam(required = false) String labId,
-            @RequestParam(required = false) String estado,
-            @RequestParam(required = false) String estudianteId) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to) {
 
-        List<BookingDTO> bookings = bookingService.getAllBookings(labId, estado, estudianteId);
+        List<BookingDTO> bookings = bookingService.getAllBookings(status, from, to);
         return ResponseEntity.ok(bookings);
     }
 
     /**
      * GET /api/bookings/{id}
-     * Obtener una reserva específica por ID.
-     *
-     * Path Parameters:
-     * - id: ID de la reserva
-     *
      * Acceso: TODOS (autenticados)
      */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<BookingDTO> getBookingById(@PathVariable String id) {
+    public ResponseEntity<BookingDTO> getBookingById(@PathVariable Long id) {
         BookingDTO booking = bookingService.getBookingById(id);
 
         if (booking == null) {
@@ -90,19 +81,19 @@ public class BookingApiController {
      *
      * Body:
      * {
-     *   "labId": "LAB-001",
-     *   "fechaInicio": "2024-09-15T09:00:00",
-     *   "fechaFin": "2024-09-15T11:00:00",
-     *   "proposito": "Práctica de Programación",
-     *   "capacidadEsperada": 25
+     *   "resourceId": 1,
+     *   "purpose": "Práctica de Programación",
+     *   "startTime": "2026-09-15T09:00:00",
+     *   "endTime": "2026-09-15T11:00:00"
      * }
+     * "studentEmail" es opcional: si no viene, ms-campuslab-bookings lo toma del JWT.
      *
-     * Acceso: ESTUDIANTE, ADMIN
+     * Acceso: ESTUDIANTE, TECNICO, ADMIN
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ESTUDIANTE', 'ADMIN')")
-    public ResponseEntity<BookingDTO> createBooking(@RequestBody Map<String, Object> bookingData) {
-        BookingDTO booking = bookingService.createBooking(bookingData);
+    @PreAuthorize("hasAnyRole('ESTUDIANTE', 'TECNICO', 'ADMIN')")
+    public ResponseEntity<BookingDTO> createBooking(@RequestBody CreateBookingDTO request) {
+        BookingDTO booking = bookingService.createBooking(request);
 
         if (booking == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -112,23 +103,17 @@ public class BookingApiController {
     }
 
     /**
-     * PUT /api/bookings/{id}
-     * Actualizar una reserva existente.
+     * PUT /api/bookings/{id}/status
+     * Cambia el estado de una reserva a cualquiera de los valores válidos
+     * del enum BookingStatus. Es el mecanismo genérico; approve/reject más
+     * abajo son atajos sobre este mismo endpoint.
      *
-     * Path Parameters:
-     * - id: ID de la reserva
-     *
-     * Body: Datos a actualizar (parcial o completo)
-     *
-     * Acceso: ESTUDIANTE (propia), ADMIN
+     * Acceso: TECNICO, ADMIN
      */
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ESTUDIANTE', 'ADMIN')")
-    public ResponseEntity<BookingDTO> updateBooking(
-            @PathVariable String id,
-            @RequestBody Map<String, Object> bookingData) {
-
-        BookingDTO booking = bookingService.updateBooking(id, bookingData);
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('TECNICO', 'ADMIN')")
+    public ResponseEntity<BookingDTO> updateStatus(@PathVariable Long id, @RequestBody StatusUpdateDTO body) {
+        BookingDTO booking = bookingService.updateStatus(id, body.getStatus());
 
         if (booking == null) {
             return ResponseEntity.notFound().build();
@@ -139,64 +124,29 @@ public class BookingApiController {
 
     /**
      * DELETE /api/bookings/{id}
-     * Cancelar una reserva.
+     * Cancela una reserva (equivalente a PUT .../status con CANCELADA).
      *
-     * Path Parameters:
-     * - id: ID de la reserva
-     *
-     * Acceso: ESTUDIANTE (propia), ADMIN
+     * Acceso: ESTUDIANTE, TECNICO, ADMIN
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ESTUDIANTE', 'ADMIN')")
-    public ResponseEntity<Void> cancelBooking(@PathVariable String id) {
-        bookingService.cancelBooking(id);
-        return ResponseEntity.noContent().build();
-    }
+    @PreAuthorize("hasAnyRole('ESTUDIANTE', 'TECNICO', 'ADMIN')")
+    public ResponseEntity<BookingDTO> cancelBooking(@PathVariable Long id) {
+        BookingDTO booking = bookingService.cancelBooking(id);
 
-    /**
-     * GET /api/bookings/availability/{labId}
-     * Verificar disponibilidad de un laboratorio en un rango de fechas.
-     *
-     * Path Parameters:
-     * - labId: ID del laboratorio
-     *
-     * Query Parameters:
-     * - fechaInicio: Fecha y hora inicio (ISO 8601)
-     * - fechaFin: Fecha y hora fin (ISO 8601)
-     *
-     * Response:
-     * {
-     *   "disponible": true,
-     *   "labId": "LAB-001",
-     *   "conflictos": [],
-     *   "capacidadDisponible": 25
-     * }
-     *
-     * Acceso: TODOS (autenticados)
-     */
-    @GetMapping("/availability/{labId}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Object>> checkAvailability(
-            @PathVariable String labId,
-            @RequestParam String fechaInicio,
-            @RequestParam String fechaFin) {
+        if (booking == null) {
+            return ResponseEntity.notFound().build();
+        }
 
-        Map<String, Object> availability = bookingService.checkAvailability(labId, fechaInicio, fechaFin);
-        return ResponseEntity.ok(availability);
+        return ResponseEntity.ok(booking);
     }
 
     /**
      * POST /api/bookings/{id}/approve
-     * Aprobar una reserva (solo TECNICO/ADMIN).
-     *
-     * Path Parameters:
-     * - id: ID de la reserva
-     *
      * Acceso: TECNICO, ADMIN
      */
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasAnyRole('TECNICO', 'ADMIN')")
-    public ResponseEntity<BookingDTO> approveBooking(@PathVariable String id) {
+    public ResponseEntity<BookingDTO> approveBooking(@PathVariable Long id) {
         BookingDTO booking = bookingService.approveBooking(id);
 
         if (booking == null) {
@@ -208,30 +158,23 @@ public class BookingApiController {
 
     /**
      * POST /api/bookings/{id}/reject
-     * Rechazar una reserva con motivo (solo TECNICO/ADMIN).
+     * ms-campuslab-bookings no tiene un estado "RECHAZADA" propio: esto se
+     * resuelve como una cancelación (ver BookingService.rejectBooking). El
+     * motivo se registra solo en logs por ahora.
      *
-     * Path Parameters:
-     * - id: ID de la reserva
-     *
-     * Body:
-     * {
-     *   "motivo": "Laboratorio no disponible en esa fecha"
-     * }
+     * Body: { "motivo": "Laboratorio no disponible en esa fecha" }
      *
      * Acceso: TECNICO, ADMIN
      */
     @PostMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('TECNICO', 'ADMIN')")
     public ResponseEntity<BookingDTO> rejectBooking(
-            @PathVariable String id,
-            @RequestBody Map<String, String> razonRechazo) {
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
 
-        // Este método debería estar en el servicio también
-        // Por ahora retornamos un ejemplo
-        Map<String, String> motivoRequest = new HashMap<>();
-        motivoRequest.put("motivo", razonRechazo.getOrDefault("motivo", "No especificado"));
+        String motivo = body != null ? body.getOrDefault("motivo", "No especificado") : "No especificado";
+        BookingDTO booking = bookingService.rejectBooking(id, motivo);
 
-        BookingDTO booking = bookingService.getBookingById(id);
         if (booking == null) {
             return ResponseEntity.notFound().build();
         }
@@ -241,17 +184,10 @@ public class BookingApiController {
 
     /**
      * GET /api/bookings/estadisticas
-     * Obtener estadísticas de reservas (solo ADMIN/TECNICO).
      *
-     * Response:
-     * {
-     *   "totalReservas": 150,
-     *   "aprobadas": 120,
-     *   "pendientes": 20,
-     *   "rechazadas": 10,
-     *   "canceladas": 5,
-     *   "tasaAprobacion": 0.85
-     * }
+     * ⚠️ Placeholder: ms-campuslab-bookings todavía no expone un endpoint de
+     * estadísticas agregadas, así que estos números son de ejemplo y no
+     * reflejan datos reales. Reemplazar cuando exista el endpoint real.
      *
      * Acceso: ADMIN, TECNICO
      */
@@ -259,12 +195,11 @@ public class BookingApiController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TECNICO')")
     public ResponseEntity<Map<String, Object>> getEstadisticas() {
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalReservas", 150);
-        stats.put("aprobadas", 120);
-        stats.put("pendientes", 20);
-        stats.put("rechazadas", 10);
-        stats.put("canceladas", 5);
-        stats.put("tasaAprobacion", 0.85);
+        stats.put("totalReservas", 0);
+        stats.put("aprobadas", 0);
+        stats.put("pendientes", 0);
+        stats.put("canceladas", 0);
+        stats.put("nota", "Placeholder: ms-campuslab-bookings aún no expone estadísticas reales");
 
         return ResponseEntity.ok(stats);
     }
