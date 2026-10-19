@@ -2,13 +2,16 @@ package org.campuslab.bff.exception;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.ServletException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 
@@ -120,6 +123,37 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    /**
+     * Errores de la capa web que Spring ya clasifica con su propio código HTTP: un ResponseStatusException
+     * lanzado a propósito (p. ej. 400 por un filtro mal escrito), una ruta inexistente (404), un verbo no
+     * permitido (405)... Sin este handler el genérico de abajo los convertía a todos en 500 "ERROR_INTERNO"
+     * (así se veía como un error del servidor el GET /api/audit cuando la ruta no existía).
+     */
+    @ExceptionHandler({ResponseStatusException.class, ServletException.class})
+    public ResponseEntity<ErrorResponse> handleWebException(Exception ex, WebRequest request) {
+        HttpStatusCode status = ex instanceof org.springframework.web.ErrorResponse web
+                ? web.getStatusCode()
+                : HttpStatus.INTERNAL_SERVER_ERROR;
+        String message = ex instanceof ResponseStatusException rse && rse.getReason() != null
+                ? rse.getReason()
+                : switch (status.value()) {
+                    case 404 -> "Ruta no encontrada";
+                    case 405 -> "Método no permitido";
+                    case 415 -> "Tipo de contenido no soportado";
+                    default -> "Solicitud inválida";
+                };
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                status.value(),
+                "ERROR_SOLICITUD",
+                message,
+                null,
+                request.getDescription(false).replace("uri=", "")
+        );
+        return new ResponseEntity<>(errorResponse, status);
     }
 
     /**

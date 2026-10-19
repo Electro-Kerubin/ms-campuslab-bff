@@ -1,6 +1,7 @@
 package org.campuslab.bff.config;
 
 import org.campuslab.bff.security.Role;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -38,6 +39,15 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     /**
+     * Si el BFF corre detrás de Azure API Management, APIM es el único dueño de CORS:
+     * con CAMPUSLAB_CORS_ENABLED=false el BFF no agrega cabeceras CORS (si las agregara, la
+     * respuesta llevaría Access-Control-Allow-Origin duplicado y el navegador la rechazaría).
+     * Por defecto sigue activo para el desarrollo local (ng serve llama directo al BFF).
+     */
+    @Value("${campuslab.cors.enabled:true}")
+    private boolean corsEnabled;
+
+    /**
      * Configuración de la cadena de filtros de seguridad HTTP.
      *
      * Define:
@@ -49,8 +59,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // CORS habilitado
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // CORS habilitado (se apaga con campuslab.cors.enabled=false cuando lo responde APIM)
+            .cors(cors -> {
+                if (corsEnabled) {
+                    cors.configurationSource(corsConfigurationSource());
+                } else {
+                    cors.disable();
+                }
+            })
 
             // CSRF deshabilitado (apropiado para APIs stateless)
             .csrf(csrf -> csrf.disable())
@@ -76,6 +92,8 @@ public class SecurityConfig {
 
                 // Rutas AUDITOR
                 .requestMatchers("/api/auditor/**").hasAnyRole(Role.AUDITOR.name(), Role.ADMIN.name())
+                // Historial de auditoría (/api/audit): solo ADMIN y AUDITOR, también a nivel de filtro
+                .requestMatchers("/api/audit/**").hasAnyRole(Role.AUDITOR.name(), Role.ADMIN.name())
 
                 // Todo lo demás requiere autenticación
                 .anyRequest().authenticated()

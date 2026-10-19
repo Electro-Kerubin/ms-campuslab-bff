@@ -97,6 +97,12 @@ public class FeignConfig {
             if (authorizationHeader != null) {
                 requestTemplate.header("Authorization", authorizationHeader);
             }
+
+            // IP del cliente original, para que la auditoría registre "desde dónde" se hizo cada acción:
+            // API Management ya viene en X-Forwarded-For; si no, la IP directa de quien llamó al BFF
+            String forwardedFor = request.getHeader("X-Forwarded-For");
+            requestTemplate.header("X-Forwarded-For",
+                    forwardedFor != null && !forwardedFor.isBlank() ? forwardedFor : request.getRemoteAddr());
         };
     }
 }
