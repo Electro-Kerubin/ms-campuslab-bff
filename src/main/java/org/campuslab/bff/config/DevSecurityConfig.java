@@ -1,6 +1,7 @@
 package org.campuslab.bff.config;
 
 import org.campuslab.bff.security.AzureAdJwtAuthenticationConverter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,6 +42,10 @@ public class DevSecurityConfig {
 
     private final AzureAdJwtAuthenticationConverter jwtAuthenticationConverter;
 
+    // false cuando el BFF corre detrás de APIM (APIM es el único dueño de CORS); ver SecurityConfig
+    @Value("${campuslab.cors.enabled:true}")
+    private boolean corsEnabled;
+
     public DevSecurityConfig(AzureAdJwtAuthenticationConverter jwtAuthenticationConverter) {
         this.jwtAuthenticationConverter = jwtAuthenticationConverter;
     }
@@ -57,8 +62,14 @@ public class DevSecurityConfig {
     @Bean
     public SecurityFilterChain devFilterChain(HttpSecurity http) throws Exception {
         http
-            // CORS habilitado
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // CORS habilitado (se apaga con campuslab.cors.enabled=false cuando lo responde APIM)
+            .cors(cors -> {
+                if (corsEnabled) {
+                    cors.configurationSource(corsConfigurationSource());
+                } else {
+                    cors.disable();
+                }
+            })
 
             // CSRF deshabilitado
             .csrf(csrf -> csrf.disable())

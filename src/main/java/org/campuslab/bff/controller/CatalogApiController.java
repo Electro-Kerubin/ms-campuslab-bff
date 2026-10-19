@@ -31,7 +31,6 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/catalog")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class CatalogApiController {
 
     @Autowired
