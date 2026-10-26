@@ -1,5 +1,7 @@
 package org.campuslab.bff.config;
 
+import org.campuslab.bff.security.RestAccessDeniedHandler;
+import org.campuslab.bff.security.RestAuthenticationEntryPoint;
 import org.campuslab.bff.security.Role;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -37,6 +39,15 @@ import java.util.Arrays;
 )
 @Profile("!dev")
 public class SecurityConfig {
+
+    private final RestAuthenticationEntryPoint authenticationEntryPoint;
+    private final RestAccessDeniedHandler accessDeniedHandler;
+
+    public SecurityConfig(RestAuthenticationEntryPoint authenticationEntryPoint,
+                          RestAccessDeniedHandler accessDeniedHandler) {
+        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
+    }
 
     /**
      * Si el BFF corre detrás de Azure API Management, APIM es el único dueño de CORS:
@@ -104,6 +115,13 @@ public class SecurityConfig {
                 .jwt(jwt -> jwt
                     .jwtAuthenticationConverter(jwtAuthenticationConverter())
                 )
+            )
+
+            // 401/403 en JSON consistente (antes el entry point existía pero nunca
+            // se registraba: los 401 salían con cuerpo vacío)
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler)
             );
 
         return http.build();

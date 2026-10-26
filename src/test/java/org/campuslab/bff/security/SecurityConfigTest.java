@@ -47,9 +47,11 @@ class SecurityConfigTest {
 
     @Test
     void requestWithValidJwtPassesTheSecurityFilterChain() throws Exception {
-        // 404 (no hay controlador mapeado todavia) en vez de 401/403 confirma
-        // que la request supero la autenticacion.
-        mockMvc.perform(get("/api/bookings")
+        // 404 (ruta autenticada sin controller mapeado) en vez de 401/403 confirma
+        // que la request supero la autenticacion. Antes se usaba /api/bookings,
+        // pero hoy ese endpoint tiene controller (BookingApiController) y el test
+        // fallaba porque la llamada Feign no llega a nada en el contexto de tests.
+        mockMvc.perform(get("/api/ruta-sin-controller-para-el-test")
                         .with(jwt().jwt(builder -> builder.claim("roles", List.of("ESTUDIANTE")))))
                 .andExpect(status().isNotFound());
     }
