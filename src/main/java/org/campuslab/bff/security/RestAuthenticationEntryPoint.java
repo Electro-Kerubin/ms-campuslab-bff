@@ -19,10 +19,16 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                           AuthenticationException authException) throws IOException {
+        // DIAGNOSTICO TEMPORAL (QA): incluir el motivo real del rechazo para depurar el 401
+        String causa = authException.getMessage();
+        Throwable anidada = authException.getCause();
+        if (anidada != null) {
+            causa += " | causa: " + anidada.getMessage();
+        }
         SecurityErrorResponseWriter.write(
                 request,
                 response,
                 HttpStatus.UNAUTHORIZED,
-                "No autorizado: token JWT ausente o invalido");
+                "No autorizado: token JWT ausente o invalido. Motivo: " + causa);
     }
 }
